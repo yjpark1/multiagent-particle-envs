@@ -197,6 +197,14 @@ class MultiAgentEnv(gym.Env):
 
     # render environment
     def _render(self, mode='human', close=True):
+        if close:
+            # close any existic renderers
+            for i,viewer in enumerate(self.viewers):
+                if viewer is not None:
+                    viewer.close()
+                self.viewers[i] = None
+            return []
+
         if mode == 'human':
             alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
             message = ''
@@ -210,14 +218,6 @@ class MultiAgentEnv(gym.Env):
                         word = alphabet[np.argmax(other.state.c)]
                     message += (other.name + ' to ' + agent.name + ': ' + word + '   ')
             print(message)
-
-        if close:
-            # close any existic renderers
-            for i,viewer in enumerate(self.viewers):
-                if viewer is not None:
-                    viewer.close()
-                self.viewers[i] = None
-            return []
 
         for i in range(len(self.viewers)):
             # create viewers (if necessary)
