@@ -76,6 +76,12 @@ class MultiAgentEnv(gym.Env):
             self.viewers = [None] * self.n
         self._reset_render()
 
+    def _seed(self, seed=None):
+        if seed is None:
+            np.random.seed(1)
+        else:
+            np.random.seed(seed)
+
     def _step(self, action_n):
         obs_n = []
         reward_n = []
