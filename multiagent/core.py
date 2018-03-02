@@ -43,6 +43,8 @@ class Wall(object):
 # properties and state of physical world entity
 class Entity(object):
     def __init__(self):
+        # index among all entities (important to set for distance caching)
+        self.i = 0
         # name 
         self.name = ''
         # properties:
@@ -117,6 +119,10 @@ class World(object):
         # contact response parameters
         self.contact_force = 1e+2
         self.contact_margin = 1e-3
+        # cache distances between all agents (not calculated by default)
+        self.cache_dists = False
+        self.cached_dist_vect = None
+        self.cached_dist_mag = None
 
     # return all entities in the world
     @property
@@ -132,6 +138,32 @@ class World(object):
     @property
     def scripted_agents(self):
         return [agent for agent in self.agents if agent.action_callback is not None]
+
+    def calculate_distances(self):
+        if self.cached_dist_vect is None:
+            # initialize distance data structure
+            self.cached_dist_vect = np.zeros((len(self.entities),
+                                              len(self.entities),
+                                              self.dim_p))
+            # calculate minimum distance for a collision between all entities
+            self.min_dists = np.zeros((len(self.entities), len(self.entities)))
+            for ia, entity_a in enumerate(self.entities):
+                for ib in range(ia + 1, len(self.entities)):
+                    entity_b = self.entities[ib]
+                    min_dist = entity_a.size + entity_b.size
+                    self.min_dists[ia, ib] = min_dist
+                    self.min_dists[ib, ia] = min_dist
+
+        for ia, entity_a in enumerate(self.entities):
+            for ib in range(ia + 1, len(self.entities)):
+                entity_b = self.entities[ib]
+                delta_pos = entity_a.state.p_pos - entity_b.state.p_pos
+                self.cached_dist_vect[ia, ib, :] = delta_pos
+                self.cached_dist_vect[ib, ia, :] = -delta_pos
+
+        self.cached_dist_mag = np.linalg.norm(self.cached_dist_vect, axis=2)
+        self.cached_collisions = (self.cached_dist_mag <= self.min_dists)
+
 
     # update state of the world
     def step(self):
@@ -149,6 +181,10 @@ class World(object):
         # update agent state
         for agent in self.agents:
             self.update_agent_state(agent)
+        # calculate and store distances between all entities
+        if self.cache_dists:
+            self.calculate_distances()
+
 
     # gather agent action forces
     def apply_action_force(self, p_force):
@@ -165,8 +201,7 @@ class World(object):
         for a,entity_a in enumerate(self.entities):
             for b,entity_b in enumerate(self.entities):
                 if(b <= a): continue
-                [f_a, f_b] = self.get_entity_collision_force(entity_a,
-                                                             entity_b)
+                [f_a, f_b] = self.get_entity_collision_force(a, b)
                 if(f_a is not None):
                     if(p_force[a] is None): p_force[a] = 0.0
                     p_force[a] = f_a + p_force[a] 
@@ -205,16 +240,23 @@ class World(object):
             agent.state.c = agent.action.c + noise      
 
     # get collision forces for any contact between two entities
-    def get_entity_collision_force(self, entity_a, entity_b):
+    def get_entity_collision_force(self, ia, ib):
+        entity_a = self.entities[ia]
+        entity_b = self.entities[ib]
         if (not entity_a.collide) or (not entity_b.collide):
             return [None, None] # not a collider
         if (entity_a is entity_b):
             return [None, None] # don't collide against itself
-        # compute actual distance between entities
-        delta_pos = entity_a.state.p_pos - entity_b.state.p_pos
-        dist = np.sqrt(np.sum(np.square(delta_pos)))
-        # minimum allowable distance
-        dist_min = entity_a.size + entity_b.size
+        if self.cache_dists:
+            delta_pos = self.cached_dist_vect[ia, ib]
+            dist = self.cached_dist_mag[ia, ib]
+            dist_min = self.min_dists[ia, ib]
+        else:
+            # compute actual distance between entities
+            delta_pos = entity_a.state.p_pos - entity_b.state.p_pos
+            dist = np.sqrt(np.sum(np.square(delta_pos)))
+            # minimum allowable distance
+            dist_min = entity_a.size + entity_b.size
         # softmax penetration
         k = self.contact_margin
         penetration = np.logaddexp(0, -(dist - dist_min)/k)*k
