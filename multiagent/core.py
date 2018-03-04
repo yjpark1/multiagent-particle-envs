@@ -245,6 +245,8 @@ class World(object):
         entity_b = self.entities[ib]
         if (not entity_a.collide) or (not entity_b.collide):
             return [None, None] # not a collider
+        if (not entity_a.movable) and (not entity_b.movable):
+            return [None, None] # neither entity moves
         if (entity_a is entity_b):
             return [None, None] # don't collide against itself
         if self.cache_dists:
@@ -261,8 +263,14 @@ class World(object):
         k = self.contact_margin
         penetration = np.logaddexp(0, -(dist - dist_min)/k)*k
         force = self.contact_force * delta_pos / dist * penetration
-        force_a = +force if entity_a.movable else None
-        force_b = -force if entity_b.movable else None
+        if entity_a.movable and entity_b.movable:
+            # consider mass in collisions
+            force_ratio = entity_b.mass / entity_a.mass
+            force_a = force_ratio * force
+            force_b = -(1 / force_ratio) * force
+        else:
+            force_a = +force if entity_a.movable else None
+            force_b = -force if entity_b.movable else None
         return [force_a, force_b]
 
     # get collision forces for contact between an entity and a wall
