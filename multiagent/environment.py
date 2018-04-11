@@ -283,6 +283,10 @@ class MultiAgentEnv(gym.Env):
             # update geometry positions
             for e, entity in enumerate(self.world.entities):
                 self.render_geoms_xform[e].set_translation(*entity.state.p_pos)
+                if 'agent' in entity.name:
+                    self.render_geoms[e].set_color(*entity.color, alpha=0.5)
+                else:
+                    self.render_geoms[e].set_color(*entity.color)
             # render to display or array
             results.append(self.viewers[i].render(return_rgb_array = mode=='rgb_array'))
 
