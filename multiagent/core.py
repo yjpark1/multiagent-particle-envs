@@ -1,4 +1,5 @@
 import numpy as np
+import seaborn as sns
 
 # physical/external base state of all entites
 class EntityState(object):
@@ -164,6 +165,20 @@ class World(object):
         self.cached_dist_mag = np.linalg.norm(self.cached_dist_vect, axis=2)
         self.cached_collisions = (self.cached_dist_mag <= self.min_dists)
 
+    def assign_agent_colors(self):
+        n_dummies = 0
+        if hasattr(self.agents[0], 'dummy'):
+            n_dummies = len([a for a in self.agents if a.dummy])
+        n_adversaries = 0
+        if hasattr(self.agents[0], 'adversary'):
+            n_adversaries = len([a for a in self.agents if a.adversary])
+        n_good_agents = len(self.agents) - n_adversaries - n_dummies
+        dummy_colors = [(0, 0, 0)] * n_dummies
+        adv_colors = sns.color_palette("OrRd_d", n_adversaries)
+        good_colors = sns.color_palette("GnBu_d", n_good_agents)
+        colors = dummy_colors + adv_colors + good_colors
+        for color, agent in zip(colors, self.agents):
+            agent.color = color
 
     # update state of the world
     def step(self):
