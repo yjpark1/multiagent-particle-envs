@@ -243,16 +243,32 @@ class MultiAgentEnv(gym.Env):
             from multiagent import rendering
             self.render_geoms = []
             self.render_geoms_xform = []
+            self.comm_geoms = []
             for entity in self.world.entities:
                 geom = rendering.make_circle(entity.size)
                 xform = rendering.Transform()
+                entity_comm_geoms = []
                 if 'agent' in entity.name:
                     geom.set_color(*entity.color, alpha=0.5)
+                    if not entity.silent:
+                        dim_c = self.world.dim_c
+                        # make circles to represent communication
+                        for ci in range(dim_c):
+                            comm = rendering.make_circle(entity.size / dim_c)
+                            comm.set_color(1, 1, 1)
+                            comm.add_attr(xform)
+                            offset = rendering.Transform()
+                            comm_size = (entity.size / dim_c)
+                            offset.set_translation(ci * comm_size * 2 -
+                                                   entity.size + comm_size, 0)
+                            comm.add_attr(offset)
+                            entity_comm_geoms.append(comm)
                 else:
                     geom.set_color(*entity.color)
                 geom.add_attr(xform)
                 self.render_geoms.append(geom)
                 self.render_geoms_xform.append(xform)
+                self.comm_geoms.append(entity_comm_geoms)
             for wall in self.world.walls:
                 corners = ((wall.axis_pos - 0.5 * wall.width, wall.endpoints[0]),
                            (wall.axis_pos - 0.5 * wall.width, wall.endpoints[1]),
@@ -272,6 +288,9 @@ class MultiAgentEnv(gym.Env):
                 viewer.geoms = []
                 for geom in self.render_geoms:
                     viewer.add_geom(geom)
+                for entity_comm_geoms in self.comm_geoms:
+                    for geom in entity_comm_geoms:
+                        viewer.add_geom(geom)
 
         results = []
         for i in range(len(self.viewers)):
@@ -288,6 +307,10 @@ class MultiAgentEnv(gym.Env):
                 self.render_geoms_xform[e].set_translation(*entity.state.p_pos)
                 if 'agent' in entity.name:
                     self.render_geoms[e].set_color(*entity.color, alpha=0.5)
+                    if not entity.silent:
+                        for ci in range(self.world.dim_c):
+                            color = 1 - entity.state.c[ci]
+                            self.comm_geoms[e][ci].set_color(color, color, color)
                 else:
                     self.render_geoms[e].set_color(*entity.color)
             # render to display or array
