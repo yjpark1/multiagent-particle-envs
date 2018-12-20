@@ -76,13 +76,13 @@ class MultiAgentEnv(gym.Env):
             self.viewers = [None] * self.n
         self._reset_render()
 
-    def _seed(self, seed=None):
+    def seed(self, seed=None):
         if seed is None:
             np.random.seed(1)
         else:
             np.random.seed(seed)
 
-    def _step(self, action_n):
+    def step(self, action_n):
         obs_n = []
         reward_n = []
         done_n = []
@@ -102,8 +102,8 @@ class MultiAgentEnv(gym.Env):
             info_n['n'].append(self._get_info(agent))
 
         # all agents get total reward in cooperative case
-        reward = np.sum(reward_n)
         if self.shared_reward:
+            reward = np.sum(reward_n)
             reward_n = [reward] * self.n
         if self.post_step_callback is not None:
             self.post_step_callback(self.world)
@@ -167,18 +167,19 @@ class MultiAgentEnv(gym.Env):
             if self.discrete_action_input:
                 agent.action.u = np.zeros(self.world.dim_p)
                 # process discrete action
-                if action[0] == 1: agent.action.u[0] = -1.0
-                if action[0] == 2: agent.action.u[0] = +1.0
-                if action[0] == 3: agent.action.u[1] = -1.0
-                if action[0] == 4: agent.action.u[1] = +1.0
+                if action[0] == 1: agent.action.u[0] = -1.0  # left
+                if action[0] == 2: agent.action.u[0] = +1.0  # right
+                if action[0] == 3: agent.action.u[1] = -1.0  # down
+                if action[0] == 4: agent.action.u[1] = +1.0  # up
             else:
                 if self.force_discrete_action:
                     d = np.argmax(action[0])
                     action[0][:] = 0.0
                     action[0][d] = 1.0
                 if self.discrete_action_space:
-                    agent.action.u[0] += action[0][1] - action[0][2]
-                    agent.action.u[1] += action[0][3] - action[0][4]
+                    # one-hot action & u = (x, y)
+                    agent.action.u[0] += action[0][1] - action[0][2]  # right - left
+                    agent.action.u[1] += action[0][3] - action[0][4]  # up - down
                 else:
                     agent.action.u = action[0]
             sensitivity = 5.0
@@ -203,7 +204,7 @@ class MultiAgentEnv(gym.Env):
         self.render_geoms_xform = None
 
     # render environment
-    def _render(self, mode='human', close=True):
+    def render(self, mode='human', close=True):
         if close:
             # close any existic renderers
             for i,viewer in enumerate(self.viewers):
