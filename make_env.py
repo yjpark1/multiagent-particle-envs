@@ -63,19 +63,19 @@ if __name__ == '__main__':
     env.discrete_action_input
     env.discrete_action_space
 
-
     s0 = env.reset()[0]
     time.sleep(1)
-    # env.render(mode="human", close=False)
+    env.render(mode="human", close=False)
     print(s0)
     actions = np.eye(5)
     s1 = env.step([actions[1]])[0]
     env.agents[0].action.u
-    for _ in range(5):
+    for _ in range(2):
         s1 = env.step([actions[1]])[0]
     print(s1)
     time.sleep(3)
     env.render(mode="human", close=False)
+    time.sleep(5)
     # env.close()
     # 0: nothing
     # 1: left
