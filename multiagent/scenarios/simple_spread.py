@@ -77,7 +77,7 @@ class Scenario(BaseScenario):
             rew -= min(dists)
         if agent.collide:
             for a in world.agents:
-                if self.is_collision(a, agent):
+                if self.is_collision(a, agent) & (agent != a):
                     rew -= 1
         return rew
 

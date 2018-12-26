@@ -15,10 +15,10 @@ class Scenario(BaseScenario):
             agent.name = 'agent %d' % i
             agent.collide = False
             agent.size = 0.075
-        # speaker
-        world.agents[0].movable = False
-        # listener
-        world.agents[1].silent = True
+        # speaker: fixed in YJ experiments
+        # world.agents[0].movable = False
+        # listener: fixed in YJ experiments
+        # world.agents[1].silent = True
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
