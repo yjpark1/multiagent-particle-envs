@@ -35,7 +35,7 @@ class Scenario(BaseScenario):
             agent.listener = False
             agent.collide = False
             agent.size = 0.075
-            agent.movable = False
+            agent.movable = True  # fixed in YJ experiments
             agent.accel = 1.5
             agent.initial_mass = 1.0
             agent.max_speed = 1.0
@@ -115,21 +115,9 @@ class Scenario(BaseScenario):
             # give listener index of their speaker
             obs += [agent.speak_ind == np.arange(len(world.speakers))]
             # give listener communication from its speaker
-            obs += [world.speakers[agent.speak_ind].state.c]
+            # obs += [world.speakers[agent.speak_ind].state.c]
             # give listener its own position/velocity,
             obs += [agent.state.p_pos, agent.state.p_vel]
-
-            # obs += [world.speakers[agent.speak_ind].state.c]
-            # # # give listener index of their speaker
-            # # obs += [agent.speak_ind == np.arange(len(world.speakers))]
-            # # # give listener all communications
-            # # obs += [speaker.state.c for speaker in world.speakers]
-            # # give listener its own velocity
-            # obs += [agent.state.p_vel]
-            # # give listener locations of all agents
-            # # obs += [a.state.p_pos for a in world.agents]
-            # # give listener locations of all landmarks
-            # obs += [l.state.p_pos for l in world.landmarks]
             return np.concatenate(obs)
         else:  # speaker
             obs = []
@@ -137,16 +125,5 @@ class Scenario(BaseScenario):
             obs += [agent.listen_ind == np.arange(len(world.listeners))]
             # speaker gets position of listener and goal
             obs += [agent.goal_a.state.p_pos, agent.goal_b.state.p_pos]
-
-            # # give speaker index of their listener
-            # # obs += [agent.listen_ind == np.arange(len(world.listeners))]
-            # # # give speaker all communications
-            # # obs += [speaker.state.c for speaker in world.speakers]
-            # # give speaker their goal color
-            # obs += [agent.goal_b.color]
-            # # give speaker their listener's position
-            # obs += [agent.goal_a.state.p_pos]
-            #
-            # obs += [speaker.state.c for speaker in world.speakers]
             return np.concatenate(obs)
             
