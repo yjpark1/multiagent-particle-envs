@@ -16,9 +16,11 @@ class Scenario(BaseScenario):
             agent.collide = False
             agent.size = 0.075
         # speaker: fixed in YJ experiments
-        # world.agents[0].movable = False
+        world.agents[0].movable = True
+        world.agents[0].speaker = True
         # listener: fixed in YJ experiments
-        # world.agents[1].silent = True
+        world.agents[1].silent = False
+        world.agents[1].speaker = False
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
@@ -84,9 +86,11 @@ class Scenario(BaseScenario):
             comm.append(other.state.c)
         
         # speaker
-        if not agent.movable:
-            return np.concatenate([goal_color])
+        if agent.speaker:
+            return np.concatenate([np.array([0.] * 8)] + [goal_color])  # 3 dim.
+
         # listener
-        if agent.silent:
-            return np.concatenate([agent.state.p_vel] + entity_pos + comm)
-            
+        if not agent.speaker:
+            return np.concatenate([agent.state.p_vel] + entity_pos + comm) # 2 + 2*3 + 3 = 11 dim.
+
+        #

@@ -113,11 +113,11 @@ class Scenario(BaseScenario):
         if agent.listener:
             obs = []
             # give listener index of their speaker
-            obs += [agent.speak_ind == np.arange(len(world.speakers))]
+            obs += [agent.speak_ind == np.arange(len(world.speakers))]  # 4 dim.
             # give listener communication from its speaker
-            obs += [world.speakers[agent.speak_ind].state.c]
+            obs += [world.speakers[agent.speak_ind].state.c]  # 5 dim.
             # give listener its own position/velocity,
-            obs += [agent.state.p_pos, agent.state.p_vel]
+            obs += [agent.state.p_pos, agent.state.p_vel]  # 4 dim.
 
             # obs += [world.speakers[agent.speak_ind].state.c]
             # # # give listener index of their speaker
@@ -134,9 +134,12 @@ class Scenario(BaseScenario):
         else:  # speaker
             obs = []
             # give speaker index of their listener
-            obs += [agent.listen_ind == np.arange(len(world.listeners))]
+            obs += [agent.listen_ind == np.arange(len(world.listeners))]  # 4 dim.
+            # give listener communication from its speaker
+            obs += [world.speakers[agent.speak_ind].state.c]  # 5 dim.
             # speaker gets position of listener and goal
-            obs += [agent.goal_a.state.p_pos, agent.goal_b.state.p_pos]
+            obs += [agent.goal_a.state.p_pos, agent.goal_b.state.p_pos]  # 4 dim.
+
 
             # # give speaker index of their listener
             # # obs += [agent.listen_ind == np.arange(len(world.listeners))]
