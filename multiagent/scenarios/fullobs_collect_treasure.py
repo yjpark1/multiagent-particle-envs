@@ -231,6 +231,10 @@ class Scenario(BaseScenario):
         if agent.collector:
             # collectors need to know their own state bc it changes
             obs.append((np.arange(n_treasure_types) == agent.holding))
+        else:
+            # dummy feature
+            obs.append((np.array([0., 0.])))
+
         for _, i in closest_agents:
             a = world.entities[i]
             obs.append(world.cached_dist_vect[i, agent.i])
