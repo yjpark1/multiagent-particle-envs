@@ -4,14 +4,14 @@ from multiagent.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
-    def make_world(self):
+    def make_world(self, num_agents=4, num_adversaries=3, num_landmarks=2):
         world = World()
         # set any world properties first
-        world.dim_c = 2
-        num_good_agents = 1
-        num_adversaries = 3
-        num_agents = num_adversaries + num_good_agents
-        num_landmarks = 2
+        world.dim_c = 2        
+        num_adversaries = num_adversaries
+        num_good_agents = num_agents - num_adversaries
+        num_agents = num_agents
+        num_landmarks = num_landmarks
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):
@@ -67,10 +67,13 @@ class Scenario(BaseScenario):
 
 
     def is_collision(self, agent1, agent2):
-        delta_pos = agent1.state.p_pos - agent2.state.p_pos
-        dist = np.sqrt(np.sum(np.square(delta_pos)))
-        dist_min = agent1.size + agent2.size
-        return True if dist < dist_min else False
+        if agent1 == agent2:
+            return False
+        else:
+            delta_pos = agent1.state.p_pos - agent2.state.p_pos
+            dist = np.sqrt(np.sum(np.square(delta_pos)))
+            dist_min = agent1.size + agent2.size
+            return True if dist < dist_min else False
 
     # return all agents that are not adversaries
     def good_agents(self, world):

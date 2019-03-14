@@ -3,13 +3,13 @@ from multiagent.core import World, Agent, Landmark
 from multiagent.scenario import BaseScenario
 
 class Scenario(BaseScenario):
-    def make_world(self):
+    def make_world(self, num_agents=2, num_adversaries=1, num_landmarks=2):
         world = World()
         # set any world properties first
         world.dim_c = 2
-        num_agents = 2
-        num_adversaries = 1
-        num_landmarks = 2
+        num_agents = num_agents
+        num_adversaries = num_adversaries
+        num_landmarks = num_landmarks
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):

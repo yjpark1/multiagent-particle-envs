@@ -4,15 +4,14 @@ from multiagent.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
-    def make_world(self):
+    def make_world(self, num_agents=6, num_adversaries=4, num_landmarks=1):
         world = World()
         # set any world properties first
         world.dim_c = 4
-        #world.damping = 1
-        num_good_agents = 2
-        num_adversaries = 4
-        num_agents = num_adversaries + num_good_agents
-        num_landmarks = 1
+        #world.damping = 1        
+        num_adversaries = num_adversaries
+        num_good_agents = num_agents - num_adversaries
+        num_landmarks = num_landmarks
         num_food = 2
         num_forests = 2
         # add agents
@@ -21,7 +20,8 @@ class Scenario(BaseScenario):
             agent.name = 'agent %d' % i
             agent.collide = True
             agent.leader = True if i == 0 else False
-            agent.silent = True if i > 0 else False
+            # agent.silent = True if i > 0 else False
+            agent.silent = True
             agent.adversary = True if i < num_adversaries else False
             agent.size = 0.075 if agent.adversary else 0.045
             agent.accel = 3.0 if agent.adversary else 4.0
@@ -124,10 +124,13 @@ class Scenario(BaseScenario):
 
 
     def is_collision(self, agent1, agent2):
-        delta_pos = agent1.state.p_pos - agent2.state.p_pos
-        dist = np.sqrt(np.sum(np.square(delta_pos)))
-        dist_min = agent1.size + agent2.size
-        return True if dist < dist_min else False
+        if agent1 == agent2:
+            return False
+        else:
+            delta_pos = agent1.state.p_pos - agent2.state.p_pos
+            dist = np.sqrt(np.sum(np.square(delta_pos)))
+            dist_min = agent1.size + agent2.size
+            return True if dist < dist_min else False
 
 
     # return all agents that are not adversaries
