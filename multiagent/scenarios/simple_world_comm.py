@@ -7,8 +7,9 @@ class Scenario(BaseScenario):
     def make_world(self, num_agents=6, num_adversaries=4, num_landmarks=1):
         world = World()
         # set any world properties first
+        world.shaped_reward = True
         world.dim_c = 4
-        #world.damping = 1        
+        #world.damping = 1
         num_adversaries = num_adversaries
         num_good_agents = num_agents - num_adversaries
         num_landmarks = num_landmarks
@@ -84,7 +85,6 @@ class Scenario(BaseScenario):
 
         return boundary_list
 
-
     def reset_world(self, world):
         # random properties for agents
         for i, agent in enumerate(world.agents):
@@ -122,7 +122,6 @@ class Scenario(BaseScenario):
         else:
             return 0
 
-
     def is_collision(self, agent1, agent2):
         if agent1 == agent2:
             return False
@@ -132,7 +131,6 @@ class Scenario(BaseScenario):
             dist_min = agent1.size + agent2.size
             return True if dist < dist_min else False
 
-
     # return all agents that are not adversaries
     def good_agents(self, world):
         return [agent for agent in world.agents if not agent.adversary]
@@ -140,7 +138,6 @@ class Scenario(BaseScenario):
     # return all adversarial agents
     def adversaries(self, world):
         return [agent for agent in world.agents if agent.adversary]
-
 
     def reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
@@ -158,40 +155,40 @@ class Scenario(BaseScenario):
     def agent_reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
         rew = 0
-        shape = False
         adversaries = self.adversaries(world)
-        if shape:
+        if world.shaped_reward:
             for adv in adversaries:
                 rew += 0.1 * np.sqrt(np.sum(np.square(agent.state.p_pos - adv.state.p_pos)))
+
+            def bound(x):
+                if x < 0.9:
+                    return 0
+                if x < 1.0:
+                    return (x - 0.9) * 10
+                return min(np.exp(2 * x - 2), 10)  # 1 + (x - 1) * (x - 1)
+
+            for p in range(world.dim_p):
+                x = abs(agent.state.p_pos[p])
+                rew -= 2 * bound(x)
+
+            rew += 0.05 * min([np.sqrt(np.sum(np.square(food.state.p_pos - agent.state.p_pos))) for food in world.food])
+
         if agent.collide:
             for a in adversaries:
                 if self.is_collision(a, agent):
                     rew -= 5
-        def bound(x):
-            if x < 0.9:
-                return 0
-            if x < 1.0:
-                return (x - 0.9) * 10
-            return min(np.exp(2 * x - 2), 10)  # 1 + (x - 1) * (x - 1)
-
-        for p in range(world.dim_p):
-            x = abs(agent.state.p_pos[p])
-            rew -= 2 * bound(x)
 
         for food in world.food:
             if self.is_collision(agent, food):
                 rew += 2
-        rew += 0.05 * min([np.sqrt(np.sum(np.square(food.state.p_pos - agent.state.p_pos))) for food in world.food])
-
         return rew
 
     def adversary_reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
         rew = 0
-        shape = True
         agents = self.good_agents(world)
         adversaries = self.adversaries(world)
-        if shape:
+        if world.shaped_reward:
             rew -= 0.1 * min([np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) for a in agents])
         if agent.collide:
             for ag in agents:

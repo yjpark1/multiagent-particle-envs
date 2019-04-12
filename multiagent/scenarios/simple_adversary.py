@@ -8,6 +8,7 @@ class Scenario(BaseScenario):
     def make_world(self, num_agents=3, num_adversaries=1, num_landmarks=None):
         world = World()
         # set any world properties first
+        world.shaped_reward = True
         world.dim_c = 2
         num_agents = num_agents
         world.num_agents = num_agents
@@ -79,12 +80,9 @@ class Scenario(BaseScenario):
 
     def agent_reward(self, agent, world):
         # Rewarded based on how close any good agent is to the goal landmark, and how far the adversary is from it
-        shaped_reward = True
-        shaped_adv_reward = True
-
         # Calculate negative reward for adversary
         adversary_agents = self.adversaries(world)
-        if shaped_adv_reward:  # distance-based adversary reward
+        if world.shaped_reward:  # distance-based adversary reward
             adv_rew = sum([np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in adversary_agents])
         else:  # proximity-based adversary reward (binary)
             adv_rew = 0
@@ -94,7 +92,7 @@ class Scenario(BaseScenario):
 
         # Calculate positive reward for agents
         good_agents = self.good_agents(world)
-        if shaped_reward:  # distance-based agent reward
+        if world.shaped_reward:  # distance-based agent reward
             pos_rew = -min(
                 [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
         else:  # proximity-based agent reward (binary)
@@ -108,15 +106,13 @@ class Scenario(BaseScenario):
 
     def adversary_reward(self, agent, world):
         # Rewarded based on proximity to the goal landmark
-        shaped_reward = True
-        if shaped_reward:  # distance-based reward
+        if world.shaped_reward:  # distance-based reward
             return -np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))
         else:  # proximity-based reward (binary)
             adv_rew = 0
             if np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))) < 2 * agent.goal_a.size:
                 adv_rew += 5
             return adv_rew
-
 
     def observation(self, agent, world):
         # get positions of all entities in this agent's reference frame

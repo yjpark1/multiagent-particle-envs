@@ -7,6 +7,7 @@ class Scenario(BaseScenario):
     def make_world(self, num_agents=4, num_adversaries=3, num_landmarks=2):
         world = World()
         # set any world properties first
+        world.shaped_reward = True
         world.dim_c = 2        
         num_adversaries = num_adversaries
         num_good_agents = num_agents - num_adversaries
@@ -35,7 +36,6 @@ class Scenario(BaseScenario):
         self.reset_world(world)
         return world
 
-
     def reset_world(self, world):
         # random properties for agents
         for i, agent in enumerate(world.agents):
@@ -53,7 +53,6 @@ class Scenario(BaseScenario):
                 landmark.state.p_pos = np.random.uniform(-0.9, +0.9, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
 
-
     def benchmark_data(self, agent, world):
         # returns data for benchmarking purposes
         if agent.adversary:
@@ -64,7 +63,6 @@ class Scenario(BaseScenario):
             return collisions
         else:
             return 0
-
 
     def is_collision(self, agent1, agent2):
         if agent1 == agent2:
@@ -83,7 +81,6 @@ class Scenario(BaseScenario):
     def adversaries(self, world):
         return [agent for agent in world.agents if agent.adversary]
 
-
     def reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
         main_reward = self.adversary_reward(agent, world) if agent.adversary else self.agent_reward(agent, world)
@@ -92,36 +89,36 @@ class Scenario(BaseScenario):
     def agent_reward(self, agent, world):
         # Agents are negatively rewarded if caught by adversaries
         rew = 0
-        shape = True
         adversaries = self.adversaries(world)
-        if shape:  # reward can optionally be shaped (increased reward for increased distance from adversary)
+        if world.shaped_reward:  # reward can optionally be shaped (increased reward for increased distance from adversary)
             for adv in adversaries:
                 rew += 0.1 * np.sqrt(np.sum(np.square(agent.state.p_pos - adv.state.p_pos)))
+
+            # agents are penalized for exiting the screen, so that they can be caught by the adversaries
+            def bound(x):
+                if x < 0.9:
+                    return 0
+                if x < 1.0:
+                    return (x - 0.9) * 10
+                return min(np.exp(2 * x - 2), 10)
+
+            for p in range(world.dim_p):
+                x = abs(agent.state.p_pos[p])
+                rew -= bound(x)
+
         if agent.collide:
             for a in adversaries:
                 if self.is_collision(a, agent):
                     rew -= 10
-
-        # agents are penalized for exiting the screen, so that they can be caught by the adversaries
-        def bound(x):
-            if x < 0.9:
-                return 0
-            if x < 1.0:
-                return (x - 0.9) * 10
-            return min(np.exp(2 * x - 2), 10)
-        for p in range(world.dim_p):
-            x = abs(agent.state.p_pos[p])
-            rew -= bound(x)
 
         return rew
 
     def adversary_reward(self, agent, world):
         # Adversaries are rewarded for collisions with agents
         rew = 0
-        shape = True
         agents = self.good_agents(world)
         adversaries = self.adversaries(world)
-        if shape:  # reward can optionally be shaped (decreased reward for increased distance from agents)
+        if world.shaped_reward:  # reward can optionally be shaped (decreased reward for increased distance from agents)
             for adv in adversaries:
                 rew -= 0.1 * min([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
         if agent.collide:
